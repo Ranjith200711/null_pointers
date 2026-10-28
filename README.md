@@ -1,6 +1,6 @@
-<div align="center">
+ <div align="center">
 
-# 🛡️ NULL_POINTERS
+# DEPENDENCY INSPECTOR
 ### Intelligent Node.js Dependency Risk Analyzer & Graph-Aware RAG Copilot
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18%2B-339933.svg?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)

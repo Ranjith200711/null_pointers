@@ -4,6 +4,7 @@ import FixCard from './dashboard/FixCard';
 import ResultsTable from './dashboard/ResultsTable';
 import Details from './details/Details';
 import DependencyGraph from './details/DependencyGraph';
+import ChatPopup from './dashboard/ChatPopup';
 
 // API base URL configuration
 const API_BASE_URL = 'http://localhost:3000';
@@ -373,6 +374,12 @@ export default function App() {
           </div>
         </main>
       )}
+
+      {/* 5. Floating RAG Security Copilot Chat Popup */}
+      <ChatPopup
+        result={result}
+        onSelectPackage={(id) => setSelectedId(id)}
+      />
     </div>
   );
 }

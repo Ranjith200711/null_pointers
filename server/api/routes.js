@@ -8,6 +8,7 @@ const { buildGraph } = require('../graph/builder');
 const { bestUpgrade } = require('../graph/fix');
 const { enrichPackages } = require('../enrich');
 const { scorePackage, calculateProjectScore } = require('../scoring');
+const { answerSecurityQuestion } = require('../rag/engine');
 
 const router = express.Router();
 const upload = multer({
@@ -93,57 +94,31 @@ async function processLockfile(content) {
 }
 
 /**
- * Fetches package-lock.json or package.json from a GitHub repository or raw URL.
+ * Fetches lockfile or package.json directly from a public GitHub repository.
  *
- * @param {string} inputUrl - GitHub repository or file URL
+ * @param {string} inputUrl - GitHub repository URL
  * @returns {Promise<string>} File content
  */
 async function fetchFromGithub(inputUrl) {
-  const url = inputUrl.trim();
-
-  // 1. Direct raw.githubusercontent.com URL
-  if (url.includes('raw.githubusercontent.com')) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Failed to fetch from GitHub: HTTP ${res.status}`);
-    return await res.text();
+  let cleanUrl = inputUrl.trim().replace(/\/+$/, '');
+  const match = cleanUrl.match(/github\.com\/([^/]+)\/([^/]+)/i);
+  if (!match) {
+    throw new Error('Invalid GitHub repository URL. Expected format: https://github.com/owner/repo');
   }
 
-  // 2. Direct GitHub blob URL (e.g. github.com/owner/repo/blob/branch/path)
-  const blobMatch = url.match(/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)/i);
-  if (blobMatch) {
-    const [, owner, repo, branch, filePath] = blobMatch;
-    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
-    const res = await fetch(rawUrl);
-    if (!res.ok) throw new Error(`Failed to fetch from GitHub: HTTP ${res.status}`);
-    return await res.text();
-  }
-
-  // 3. GitHub Repository Root URL (e.g. https://github.com/owner/repo)
-  const repoMatch = url.match(/github\.com\/([^/]+)\/([^/]+)/i);
-  if (!repoMatch) {
-    throw new Error(`Invalid GitHub repository URL: ${inputUrl}`);
-  }
-
-  const owner = repoMatch[1];
-  const repo = repoMatch[2].replace(/\.git$/i, '').split('/')[0];
-
+  const owner = match[1];
+  let repo = match[2].replace(/\.git$/i, '');
   const branches = ['main', 'master'];
-  const fileCandidates = [
-    'package-lock.json',
-    'package.json',
-    'server/package-lock.json',
-    'client/package-lock.json',
-    'samples/package-lock.json'
-  ];
+  const filenames = ['package-lock.json', 'package.json', 'server/package-lock.json', 'client/package-lock.json'];
 
   for (const branch of branches) {
-    for (const file of fileCandidates) {
+    for (const filename of filenames) {
+      const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filename}`;
       try {
-        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${file}`;
-        const res = await fetch(rawUrl);
-        if (res.ok) {
-          const text = await res.text();
-          if (text && text.trim().startsWith('{')) {
+        const response = await fetch(rawUrl);
+        if (response.ok) {
+          const text = await response.text();
+          if (text && text.trim()) {
             return text;
           }
         }
@@ -289,6 +264,48 @@ router.get('/sample', async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       error: err.message || 'Failed to process sample package-lock.json'
+    });
+  }
+});
+
+/**
+ * POST /chat
+ * RAG Chatbot endpoint for answering security questions about the dependency graph.
+ */
+router.post('/chat', async (req, res) => {
+  try {
+    const { message, context, history } = req.body || {};
+    if (!message || typeof message !== 'string' || message.trim() === '') {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    let activeContext = context;
+
+    // Fallback to sample context if no active context provided
+    if (!activeContext || !activeContext.packages || activeContext.packages.length === 0) {
+      try {
+        const candidatePaths = [
+          path.resolve(__dirname, '../../samples/package-lock.json'),
+          path.resolve(__dirname, '../samples/package-lock.json'),
+          path.resolve(process.cwd(), 'samples/package-lock.json'),
+          path.resolve(process.cwd(), 'server/samples/package-lock.json'),
+          path.resolve(__dirname, '../package-lock.json')
+        ];
+        const samplePath = candidatePaths.find(p => fs.existsSync(p));
+        if (samplePath) {
+          const sampleContent = fs.readFileSync(samplePath, 'utf8');
+          activeContext = await processLockfile(sampleContent);
+        }
+      } catch (err) {
+        // continue without sample context if load fails
+      }
+    }
+
+    const response = await answerSecurityQuestion(message, activeContext || {}, history || []);
+    return res.json(response);
+  } catch (err) {
+    return res.status(500).json({
+      error: err.message || 'Error processing chat query'
     });
   }
 });

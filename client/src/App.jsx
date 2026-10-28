@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import SummaryHeader from './dashboard/SummaryHeader';
 import FixCard from './dashboard/FixCard';
 import ResultsTable from './dashboard/ResultsTable';
-import Details from './dashboard/Details';
+import Details from './details/Details';
+import DependencyGraph from './details/DependencyGraph';
 
 // API base URL configuration
 const API_BASE_URL = 'http://localhost:3000';
@@ -162,6 +163,9 @@ export default function App() {
     setFilePath('');
     setError(null);
   };
+
+  // Active selected package object
+  const selectedPkg = result?.packages?.find(p => p.id === selectedId) || null;
 
   return (
     <div className="app-container">
@@ -363,10 +367,21 @@ export default function App() {
                 onSelect={(id) => setSelectedId(id)}
                 selectedId={selectedId}
               />
+
+              {/* 4. Dependency Graph below the table */}
+              {result.graph && (
+                <DependencyGraph
+                  graph={result.graph}
+                  selectedId={selectedId}
+                  packages={result.packages || []}
+                  onSelect={(id) => setSelectedId(id)}
+                />
+              )}
             </div>
 
             <aside className="details-column">
               <Details
+                pkg={selectedPkg}
                 selectedId={selectedId}
                 packages={result.packages || []}
                 onClose={() => setSelectedId(null)}

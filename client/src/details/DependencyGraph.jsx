@@ -263,13 +263,26 @@ export default function DependencyGraph({
           width={dimensions.width}
           height={dimensions.height}
           graphData={graphData}
-          backgroundColor="#090d16"
+          backgroundColor="#ffffff"
           nodeId="id"
           nodeVal={node => node.radius}
           cooldownTicks={120}
           onNodeClick={node => onSelect && onSelect(node.id)}
-          linkDirectionalArrowLength={4}
+          linkDirectionalArrowLength={4.5}
           linkDirectionalArrowRelPos={0.95}
+          linkDirectionalArrowColor={link => {
+            const linkKey1 = `${link.source?.id || link.source}->${link.target?.id || link.target}`;
+            const linkKey2 = `${link.target?.id || link.target}->${link.source?.id || link.source}`;
+            const isHighlight =
+              highlightedEdgeKeys.has(linkKey1) ||
+              highlightedEdgeKeys.has(linkKey2) ||
+              (highlightedNodeIds.has(link.source?.id || link.source) &&
+                highlightedNodeIds.has(link.target?.id || link.target));
+
+            if (isHighlight) return '#ef4444';
+            if (hasSelection) return 'rgba(0, 0, 0, 0.15)';
+            return '#0f172a';
+          }}
           // Link coloring and width highlighting
           linkWidth={link => {
             const linkKey1 = `${link.source?.id || link.source}->${link.target?.id || link.target}`;
@@ -280,7 +293,7 @@ export default function DependencyGraph({
               (highlightedNodeIds.has(link.source?.id || link.source) &&
                 highlightedNodeIds.has(link.target?.id || link.target));
 
-            return isHighlight ? 3.5 : 1;
+            return isHighlight ? 3.5 : 1.2;
           }}
           linkColor={link => {
             const linkKey1 = `${link.source?.id || link.source}->${link.target?.id || link.target}`;
@@ -292,8 +305,8 @@ export default function DependencyGraph({
                 highlightedNodeIds.has(link.target?.id || link.target));
 
             if (isHighlight) return '#ef4444';
-            if (hasSelection) return 'rgba(51, 65, 85, 0.2)';
-            return 'rgba(100, 116, 139, 0.45)';
+            if (hasSelection) return 'rgba(0, 0, 0, 0.12)';
+            return '#0f172a'; // Black/dark edges
           }}
           // Custom Node Canvas Renderer
           nodeCanvasObject={(node, ctx, globalScale) => {
@@ -304,7 +317,7 @@ export default function DependencyGraph({
             // Opacity: Dim if selection exists and node is not in path
             let alpha = 1;
             if (hasSelection && !isPathNode && !isSelected) {
-              alpha = 0.25;
+              alpha = 0.22;
             }
 
             ctx.save();
@@ -314,18 +327,14 @@ export default function DependencyGraph({
             if (isSelected) {
               ctx.beginPath();
               ctx.arc(node.x, node.y, radius + 4, 0, 2 * Math.PI, false);
-              ctx.strokeStyle = '#60a5fa';
+              ctx.strokeStyle = '#2563eb';
               ctx.lineWidth = 3;
-              ctx.shadowColor = '#3b82f6';
-              ctx.shadowBlur = 10;
               ctx.stroke();
             } else if (isPathNode) {
               ctx.beginPath();
-              ctx.arc(node.x, node.y, radius + 3, 0, 2 * Math.PI, false);
+              ctx.arc(node.x, node.y, radius + 3.5, 0, 2 * Math.PI, false);
               ctx.strokeStyle = '#ef4444';
               ctx.lineWidth = 2.5;
-              ctx.shadowColor = '#ef4444';
-              ctx.shadowBlur = 8;
               ctx.stroke();
             }
 
@@ -335,8 +344,9 @@ export default function DependencyGraph({
             ctx.fillStyle = node.color || '#10b981';
             ctx.fill();
 
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 1;
+            // Clean white border on node circle
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
             ctx.stroke();
 
             // Label text: show label if zoomed in, or if node is selected/in path, or score is high
@@ -350,18 +360,26 @@ export default function DependencyGraph({
               ctx.textAlign = 'center';
               ctx.textBaseline = 'top';
 
-              // Text background bubble for readability
+              // Text background bubble for readability on white canvas
               const textWidth = ctx.measureText(label).width;
-              ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
               ctx.fillRect(
-                node.x - textWidth / 2 - 3,
-                node.y + radius + 2,
-                textWidth + 6,
+                node.x - textWidth / 2 - 4,
+                node.y + radius + 3,
+                textWidth + 8,
+                fontSize + 4
+              );
+              ctx.strokeStyle = 'rgba(15, 23, 42, 0.2)';
+              ctx.lineWidth = 0.8;
+              ctx.strokeRect(
+                node.x - textWidth / 2 - 4,
+                node.y + radius + 3,
+                textWidth + 8,
                 fontSize + 4
               );
 
-              ctx.fillStyle = isSelected ? '#93c5fd' : isPathNode ? '#fca5a5' : '#f1f5f9';
-              ctx.fillText(label, node.x, node.y + radius + 4);
+              ctx.fillStyle = isSelected ? '#1d4ed8' : isPathNode ? '#b91c1c' : '#0f172a';
+              ctx.fillText(label, node.x, node.y + radius + 5);
             }
 
             ctx.restore();

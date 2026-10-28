@@ -2090,6 +2090,7 @@ code, pre {
   position: relative;
   width: 100%;
   height: 520px;
+  background-color: #ffffff;
   overflow: hidden;
   cursor: grab;
 }

@@ -93,8 +93,117 @@ async function processLockfile(content) {
 }
 
 /**
+ * Fetches package-lock.json or package.json from a GitHub repository or raw URL.
+ *
+ * @param {string} inputUrl - GitHub repository or file URL
+ * @returns {Promise<string>} File content
+ */
+async function fetchFromGithub(inputUrl) {
+  const url = inputUrl.trim();
+
+  // 1. Direct raw.githubusercontent.com URL
+  if (url.includes('raw.githubusercontent.com')) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to fetch from GitHub: HTTP ${res.status}`);
+    return await res.text();
+  }
+
+  // 2. Direct GitHub blob URL (e.g. github.com/owner/repo/blob/branch/path)
+  const blobMatch = url.match(/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)/i);
+  if (blobMatch) {
+    const [, owner, repo, branch, filePath] = blobMatch;
+    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+    const res = await fetch(rawUrl);
+    if (!res.ok) throw new Error(`Failed to fetch from GitHub: HTTP ${res.status}`);
+    return await res.text();
+  }
+
+  // 3. GitHub Repository Root URL (e.g. https://github.com/owner/repo)
+  const repoMatch = url.match(/github\.com\/([^/]+)\/([^/]+)/i);
+  if (!repoMatch) {
+    throw new Error(`Invalid GitHub repository URL: ${inputUrl}`);
+  }
+
+  const owner = repoMatch[1];
+  const repo = repoMatch[2].replace(/\.git$/i, '').split('/')[0];
+
+  const branches = ['main', 'master'];
+  const fileCandidates = [
+    'package-lock.json',
+    'package.json',
+    'server/package-lock.json',
+    'client/package-lock.json',
+    'samples/package-lock.json'
+  ];
+
+  for (const branch of branches) {
+    for (const file of fileCandidates) {
+      try {
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${file}`;
+        const res = await fetch(rawUrl);
+        if (res.ok) {
+          const text = await res.text();
+          if (text && text.trim().startsWith('{')) {
+            return text;
+          }
+        }
+      } catch (err) {
+        // try next candidate
+      }
+    }
+  }
+
+  throw new Error(`Could not find a package-lock.json or package.json in GitHub repository: ${inputUrl}`);
+}
+
+/**
+ * Reads a package-lock.json or package.json from a local system folder or file path.
+ *
+ * @param {string} inputPath - File or folder path on local disk
+ * @returns {string} File content
+ */
+function readFromSystemPath(inputPath) {
+  const resolved = path.resolve(inputPath.trim());
+  if (!fs.existsSync(resolved)) {
+    throw new Error(`Path does not exist on system: ${inputPath}`);
+  }
+
+  const stat = fs.statSync(resolved);
+  if (stat.isFile()) {
+    const content = fs.readFileSync(resolved, 'utf8');
+    if (!content || !content.trim()) {
+      throw new Error(`File is empty: ${inputPath}`);
+    }
+    return content;
+  }
+
+  if (stat.isDirectory()) {
+    const candidates = [
+      path.join(resolved, 'package-lock.json'),
+      path.join(resolved, 'package.json'),
+      path.join(resolved, 'server', 'package-lock.json'),
+      path.join(resolved, 'client', 'package-lock.json'),
+      path.join(resolved, 'samples', 'package-lock.json')
+    ];
+
+    for (const cand of candidates) {
+      if (fs.existsSync(cand) && fs.statSync(cand).isFile()) {
+        const content = fs.readFileSync(cand, 'utf8');
+        if (content && content.trim()) {
+          return content;
+        }
+      }
+    }
+
+    throw new Error(`No package-lock.json or package.json found in directory: ${inputPath}`);
+  }
+
+  throw new Error(`Path is not a regular file or directory: ${inputPath}`);
+}
+
+/**
  * POST /analyze
- * Accepts multipart file upload OR JSON body { filePath }
+ * Accepts multipart file upload OR JSON body { filePath, folderPath, githubUrl, content }
  */
 router.post('/analyze', upload.any(), async (req, res) => {
   try {
@@ -110,15 +219,16 @@ router.post('/analyze', upload.any(), async (req, res) => {
       if (!content || content.trim() === '') {
         return res.status(400).json({ error: 'Uploaded file is empty' });
       }
+    } else if (req.body && req.body.githubUrl) {
+      content = await fetchFromGithub(req.body.githubUrl);
+    } else if (req.body && req.body.folderPath) {
+      content = readFromSystemPath(req.body.folderPath);
     } else if (req.body && req.body.filePath) {
-      // Check for filePath in JSON body
-      const resolvedPath = path.resolve(req.body.filePath);
-      if (!fs.existsSync(resolvedPath)) {
-        return res.status(400).json({ error: `File not found at path: ${req.body.filePath}` });
-      }
-      content = fs.readFileSync(resolvedPath, 'utf8');
-      if (!content || content.trim() === '') {
-        return res.status(400).json({ error: 'File is empty' });
+      const target = req.body.filePath.trim();
+      if (/^https?:\/\/|github\.com/i.test(target)) {
+        content = await fetchFromGithub(target);
+      } else {
+        content = readFromSystemPath(target);
       }
     } else if (req.body && req.body.content) {
       content = req.body.content;
@@ -127,7 +237,7 @@ router.post('/analyze', upload.any(), async (req, res) => {
       }
     } else {
       return res.status(400).json({
-        error: 'No file uploaded or filePath provided in request'
+        error: 'No file uploaded, system path, or GitHub URL provided in request'
       });
     }
 
@@ -139,7 +249,9 @@ router.post('/analyze', upload.any(), async (req, res) => {
       /invalid/i.test(err.message) ||
       /empty/i.test(err.message) ||
       /JSON/i.test(err.message) ||
-      /parse/i.test(err.message);
+      /parse/i.test(err.message) ||
+      /not found/i.test(err.message) ||
+      /exist/i.test(err.message);
 
     return res.status(isBadRequest ? 400 : 500).json({
       error: err.message || 'An unexpected error occurred during analysis'

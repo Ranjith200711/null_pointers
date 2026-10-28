@@ -2098,3 +2098,33 @@ code, pre {
 .canvas-wrapper:active {
   cursor: grabbing;
 }
+
+/* =======================================================
+   SOURCE INPUTS GRID (FILE, FOLDER, GITHUB)
+======================================================= */
+.source-inputs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1.15fr;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .source-inputs-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.source-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-hint {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 3px;
+}

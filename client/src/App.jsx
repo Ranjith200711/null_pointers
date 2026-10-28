@@ -9,12 +9,10 @@ import DependencyGraph from './details/DependencyGraph';
 const API_BASE_URL = 'http://localhost:3000';
 
 export default function App() {
-  // USE_MOCK flag (interactive toggle on UI)
-  const [useMock, setUseMock] = useState(false);
-
-  // Upload form state
+  // Upload & Source inputs
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePath, setFilePath] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
 
   // Status & Analysis Results
   const [loading, setLoading] = useState(false);
@@ -32,50 +30,27 @@ export default function App() {
     }
   };
 
-  // Helper to load mock results
-  const loadMockResult = async () => {
-    setLoading(true);
-    setLoadingStep('Loading mock result from /mock/result.json...');
-    setError(null);
-    try {
-      const res = await fetch('/mock/result.json');
-      if (!res.ok) {
-        throw new Error(`Failed to load mock data: HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      setResult(data);
-      if (data.packages && data.packages.length > 0) {
-        setSelectedId(data.packages[0].id);
-      }
-    } catch (err) {
-      setError(`Mock Load Error: ${err.message}`);
-    } finally {
-      setLoading(false);
-      setLoadingStep('');
-    }
-  };
-
   // POST to http://localhost:3000/analyze
   const handleAnalyze = async () => {
     setError(null);
 
-    if (useMock) {
-      return loadMockResult();
-    }
+    const hasFile = Boolean(selectedFile);
+    const hasPath = Boolean(filePath.trim());
+    const hasGithub = Boolean(githubUrl.trim());
 
-    if (!selectedFile && !filePath.trim()) {
-      setError('Please select a package-lock.json / package.json file, or enter a valid file path.');
+    if (!hasFile && !hasPath && !hasGithub) {
+      setError('Please select a file, enter a local system folder path, or provide a GitHub repository link.');
       return;
     }
 
     setLoading(true);
-    setLoadingStep('Uploading lockfile and analyzing dependency risk...');
+    setLoadingStep('Fetching dependency metadata and analyzing risk...');
 
     try {
       let res;
 
-      if (selectedFile) {
-        // Multipart file upload
+      if (hasFile) {
+        // 1. Multipart file upload
         const formData = new FormData();
         formData.append('file', selectedFile);
 
@@ -83,8 +58,17 @@ export default function App() {
           method: 'POST',
           body: formData
         });
+      } else if (hasGithub) {
+        // 2. GitHub repository or file link
+        res = await fetch(`${API_BASE_URL}/analyze`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ githubUrl: githubUrl.trim() })
+        });
       } else {
-        // File path in JSON body
+        // 3. Local system folder or file path
         res = await fetch(`${API_BASE_URL}/analyze`, {
           method: 'POST',
           headers: {
@@ -107,10 +91,10 @@ export default function App() {
     } catch (err) {
       if (err.message && err.message.includes('Failed to fetch')) {
         setError(
-          `Unable to connect to analysis server at ${API_BASE_URL}. Ensure the backend is running with "npm start" in the server directory, or enable the "USE_MOCK" toggle above.`
+          `Unable to connect to analysis server at ${API_BASE_URL}. Ensure the backend is running with "npm start" in the server directory.`
         );
       } else {
-        setError(err.message || 'Analysis failed. Please check the lockfile format and try again.');
+        setError(err.message || 'Analysis failed. Please check the inputs and try again.');
       }
     } finally {
       setLoading(false);
@@ -121,11 +105,6 @@ export default function App() {
   // GET /sample
   const handleUseSample = async () => {
     setError(null);
-
-    if (useMock) {
-      return loadMockResult();
-    }
-
     setLoading(true);
     setLoadingStep('Analyzing sample package-lock.json on server...');
 
@@ -145,7 +124,7 @@ export default function App() {
     } catch (err) {
       if (err.message && err.message.includes('Failed to fetch')) {
         setError(
-          `Unable to connect to analysis server at ${API_BASE_URL}. Ensure backend is running or toggle "USE_MOCK" on.`
+          `Unable to connect to analysis server at ${API_BASE_URL}. Ensure backend is running.`
         );
       } else {
         setError(err.message || 'Failed to analyze sample lockfile.');
@@ -161,6 +140,7 @@ export default function App() {
     setSelectedId(null);
     setSelectedFile(null);
     setFilePath('');
+    setGithubUrl('');
     setError(null);
   };
 
@@ -169,46 +149,30 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Top Banner & Mode Toggle */}
+      {/* Top Banner */}
       <header className="page-header">
         <div>
           <h1 className="page-title">
             <span className="title-highlight">Dependency</span> Inspector
           </h1>
           <p className="page-subtitle">
-            Parse lockfiles, enrich with OSV.dev and npm registry, score risk transparently, and find single-command upgrades.
+            Scan Node.js lockfiles from local files, system folders, or GitHub repos. Identify CVEs, deprecations, risky licenses, and single-command upgrades.
           </p>
-        </div>
-
-        {/* USE_MOCK Toggle Switch */}
-        <div className="mock-toggle-container">
-          <label className="toggle-switch-label">
-            <input
-              type="checkbox"
-              checked={useMock}
-              onChange={(e) => setUseMock(e.target.checked)}
-              className="toggle-checkbox"
-            />
-            <span className="toggle-slider"></span>
-            <span className="toggle-text">
-              USE_MOCK: <strong>{useMock ? 'ENABLED (/mock/result.json)' : 'DISABLED (Live API)'}</strong>
-            </span>
-          </label>
         </div>
       </header>
 
-      {/* Upload Controls Card */}
+      {/* Upload & Source Selection Card */}
       <section className="upload-card">
-        <h2 className="card-heading">Analyze Project Lockfile</h2>
+        <h2 className="card-heading">Analyze Dependencies</h2>
         <p className="card-subheading">
-          Select your <code>package-lock.json</code> file or enter an absolute/relative path on disk.
+          Choose a lockfile, specify a local project directory, or enter a GitHub repository link.
         </p>
 
-        <div className="upload-form-grid">
+        <div className="source-inputs-grid">
           {/* 1. File Picker */}
-          <div className="form-group">
+          <div className="form-group source-group">
             <label className="input-label" htmlFor="lockfile-upload">
-              1. Choose Lockfile (File Picker)
+              📁 Choose Lockfile
             </label>
             <div className="file-input-wrapper">
               <input
@@ -240,26 +204,22 @@ export default function App() {
             </div>
             {selectedFile && (
               <span className="file-meta">
-                {(selectedFile.size / 1024).toFixed(1)} KB • Ready to analyze
+                {(selectedFile.size / 1024).toFixed(1)} KB • Ready
               </span>
             )}
           </div>
 
-          <div className="form-divider-or">
-            <span>OR</span>
-          </div>
-
-          {/* 2. File Path Input */}
-          <div className="form-group">
+          {/* 2. System Folder or File Path */}
+          <div className="form-group source-group">
             <label className="input-label" htmlFor="file-path-input">
-              2. Absolute / Relative File Path
+              💻 System Folder or File Path
             </label>
             <div className="text-input-wrapper">
               <input
                 id="file-path-input"
                 type="text"
                 className="text-input"
-                placeholder="e.g. samples/package-lock.json"
+                placeholder="e.g. D:/null_pointers/server or /my-project"
                 value={filePath}
                 onChange={(e) => {
                   setFilePath(e.target.value);
@@ -268,6 +228,29 @@ export default function App() {
                 disabled={loading}
               />
             </div>
+            <span className="input-hint">Reads package-lock.json inside directory</span>
+          </div>
+
+          {/* 3. GitHub Repository Link */}
+          <div className="form-group source-group">
+            <label className="input-label" htmlFor="github-url-input">
+              🐙 GitHub Repository Link
+            </label>
+            <div className="text-input-wrapper">
+              <input
+                id="github-url-input"
+                type="text"
+                className="text-input"
+                placeholder="e.g. https://github.com/Ranjith200711/null_pointers"
+                value={githubUrl}
+                onChange={(e) => {
+                  setGithubUrl(e.target.value);
+                  setError(null);
+                }}
+                disabled={loading}
+              />
+            </div>
+            <span className="input-hint">Fetches lockfile directly from repository</span>
           </div>
         </div>
 

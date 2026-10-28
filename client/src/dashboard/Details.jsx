@@ -39,6 +39,15 @@ export default function Details({ selectedId, packages = [], pkg: directPkg = nu
   const highestSev = getHighestSeverity(pkg.vulns);
   const breakdown = pkg.scoreBreakdown || {};
 
+  // Safely extract blast radius count and dependency path (supports number or { count, path } object)
+  const blastCount = typeof pkg.blastRadius === 'object' && pkg.blastRadius !== null
+    ? (pkg.blastRadius.count ?? 0)
+    : (pkg.blastRadius ?? 0);
+
+  const blastPath = typeof pkg.blastRadius === 'object' && pkg.blastRadius !== null && Array.isArray(pkg.blastRadius.path)
+    ? pkg.blastRadius.path.join(' → ')
+    : null;
+
   return (
     <div className="package-details-card">
       {/* Header with Title and Close Button */}
@@ -65,7 +74,7 @@ export default function Details({ selectedId, packages = [], pkg: directPkg = nu
       <div className="details-stats-grid">
         <div className="stat-card">
           <span className="stat-label">Blast Radius</span>
-          <span className="stat-val">{pkg.blastRadius ?? 0}</span>
+          <span className="stat-val">{blastCount}</span>
           <span className="stat-hint">dependents impacted</span>
         </div>
         <div className="stat-card">
@@ -83,6 +92,15 @@ export default function Details({ selectedId, packages = [], pkg: directPkg = nu
           <span className="stat-val">{pkg.deprecated ? 'Deprecated' : 'Active'}</span>
           <span className="stat-hint">{pkg.abandoned ? 'Abandoned' : 'Maintained'}</span>
         </div>
+
+        {blastPath && (
+          <div className="stat-card" style={{ gridColumn: 'span 2' }}>
+            <span className="stat-label">Dependency Chain</span>
+            <span className="stat-hint" style={{ fontFamily: 'var(--font-mono)', color: '#93c5fd', marginTop: '4px', wordBreak: 'break-all' }}>
+              {blastPath}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Transparent Score Breakdown */}

@@ -62,7 +62,12 @@ async function processLockfile(content) {
       deprecated: pkg.deprecated || false,
       lastPublish: pkg.lastPublish || null,
       license: pkg.license || 'UNKNOWN',
-      installScripts: Boolean(pkg.hasInstallScript || pkg.installScripts),
+      installScripts: Boolean(pkg.hasInstallScript || (Array.isArray(pkg.installScripts) ? pkg.installScripts.length > 0 : pkg.installScripts)),
+      dataUnavailable: Boolean(pkg.dataUnavailable),
+      riskyLicense: Boolean(pkg.riskyLicense),
+      licenseNote: pkg.licenseNote || '',
+      abandoned: Boolean(pkg.abandoned),
+      abandonedReason: pkg.abandonedReason || '',
       score: scoringResult.score,
       scoreBreakdown: scoringResult.scoreBreakdown,
       blastRadius: blastRadiusMap.get(pkg.id) || 0

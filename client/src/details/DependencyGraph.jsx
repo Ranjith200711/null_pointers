@@ -2,23 +2,23 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 
 /**
- * Returns color string for a given score/risk level.
+ * Returns color string for a given score/risk level (high-contrast on white background).
  */
 function getNodeColor(score = 0) {
   const s = Number(score) || 0;
-  if (s >= 60) return '#ef4444'; // Critical Red
-  if (s >= 40) return '#f97316'; // High Orange
-  if (s >= 20) return '#f59e0b'; // Medium Amber
-  return '#10b981';              // Low / None Gray-Green
+  if (s >= 60) return '#dc2626'; // High Contrast Crimson Red
+  if (s >= 40) return '#ea580c'; // High Contrast Dark Orange
+  if (s >= 20) return '#d97706'; // High Contrast Warm Amber
+  return '#059669';              // High Contrast Emerald Green
 }
 
 /**
- * Returns radius size based on risk score.
+ * Returns radius size based on risk score (prominent on white canvas).
  */
 function getNodeRadius(score = 0) {
   const s = Number(score) || 0;
-  // Radius between 5px and 16px
-  return Math.max(5, Math.min(16, 5 + (s / 100) * 11));
+  // Radius between 7px and 22px
+  return Math.max(7, Math.min(22, 7 + (s / 100) * 15));
 }
 
 export default function DependencyGraph({
@@ -268,8 +268,8 @@ export default function DependencyGraph({
           nodeVal={node => node.radius}
           cooldownTicks={120}
           onNodeClick={node => onSelect && onSelect(node.id)}
-          linkDirectionalArrowLength={4.5}
-          linkDirectionalArrowRelPos={0.95}
+          linkDirectionalArrowLength={6}
+          linkDirectionalArrowRelPos={0.96}
           linkDirectionalArrowColor={link => {
             const linkKey1 = `${link.source?.id || link.source}->${link.target?.id || link.target}`;
             const linkKey2 = `${link.target?.id || link.target}->${link.source?.id || link.source}`;
@@ -279,8 +279,8 @@ export default function DependencyGraph({
               (highlightedNodeIds.has(link.source?.id || link.source) &&
                 highlightedNodeIds.has(link.target?.id || link.target));
 
-            if (isHighlight) return '#ef4444';
-            if (hasSelection) return 'rgba(0, 0, 0, 0.15)';
+            if (isHighlight) return '#dc2626';
+            if (hasSelection) return 'rgba(100, 116, 139, 0.45)';
             return '#0f172a';
           }}
           // Link coloring and width highlighting
@@ -293,7 +293,7 @@ export default function DependencyGraph({
               (highlightedNodeIds.has(link.source?.id || link.source) &&
                 highlightedNodeIds.has(link.target?.id || link.target));
 
-            return isHighlight ? 3.5 : 1.2;
+            return isHighlight ? 4.5 : 2;
           }}
           linkColor={link => {
             const linkKey1 = `${link.source?.id || link.source}->${link.target?.id || link.target}`;
@@ -304,20 +304,20 @@ export default function DependencyGraph({
               (highlightedNodeIds.has(link.source?.id || link.source) &&
                 highlightedNodeIds.has(link.target?.id || link.target));
 
-            if (isHighlight) return '#ef4444';
-            if (hasSelection) return 'rgba(0, 0, 0, 0.12)';
-            return '#0f172a'; // Black/dark edges
+            if (isHighlight) return '#dc2626'; // Vivid Highlight Red
+            if (hasSelection) return 'rgba(100, 116, 139, 0.45)'; // Clearly visible dimmed gray
+            return '#0f172a'; // Bold Jet Black
           }}
           // Custom Node Canvas Renderer
           nodeCanvasObject={(node, ctx, globalScale) => {
             const isSelected = selectedId === node.id;
             const isPathNode = highlightedNodeIds.has(node.id);
-            const radius = node.radius || 6;
+            const radius = node.radius || 8;
 
-            // Opacity: Dim if selection exists and node is not in path
+            // Opacity: Dim non-selected nodes slightly to 0.45 so they remain clearly visible
             let alpha = 1;
             if (hasSelection && !isPathNode && !isSelected) {
-              alpha = 0.22;
+              alpha = 0.45;
             }
 
             ctx.save();
@@ -326,66 +326,87 @@ export default function DependencyGraph({
             // Highlight ring for path and selected node
             if (isSelected) {
               ctx.beginPath();
-              ctx.arc(node.x, node.y, radius + 4, 0, 2 * Math.PI, false);
+              ctx.arc(node.x, node.y, radius + 5, 0, 2 * Math.PI, false);
               ctx.strokeStyle = '#2563eb';
-              ctx.lineWidth = 3;
+              ctx.lineWidth = 3.5;
               ctx.stroke();
             } else if (isPathNode) {
               ctx.beginPath();
-              ctx.arc(node.x, node.y, radius + 3.5, 0, 2 * Math.PI, false);
-              ctx.strokeStyle = '#ef4444';
-              ctx.lineWidth = 2.5;
+              ctx.arc(node.x, node.y, radius + 4.5, 0, 2 * Math.PI, false);
+              ctx.strokeStyle = '#dc2626';
+              ctx.lineWidth = 3;
               ctx.stroke();
             }
 
             // Draw Node Circle
             ctx.beginPath();
             ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
-            ctx.fillStyle = node.color || '#10b981';
+            ctx.fillStyle = node.color || '#059669';
             ctx.fill();
 
-            // Clean white border on node circle
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1.5;
+            // Dark solid border around every node for contrast on white canvas
+            ctx.strokeStyle = isSelected ? '#1e3a8a' : isPathNode ? '#991b1b' : '#0f172a';
+            ctx.lineWidth = 2;
             ctx.stroke();
 
-            // Label text: show label if zoomed in, or if node is selected/in path, or score is high
+            // Label text: show on zoom, selection, path, or elevated score
             const shouldShowLabel =
-              globalScale > 1.8 || isSelected || isPathNode || node.score >= 50;
+              globalScale > 1.2 || isSelected || isPathNode || node.score >= 40;
 
             if (shouldShowLabel) {
               const label = node.name || node.id;
-              const fontSize = Math.max(9, Math.min(13, 11 / Math.sqrt(globalScale)));
-              ctx.font = `${isSelected ? 'bold ' : ''}${fontSize}px JetBrains Mono, sans-serif`;
+              const fontSize = Math.max(10, Math.min(14, 12 / Math.sqrt(globalScale)));
+              ctx.font = `${isSelected || isPathNode ? 'bold ' : '600 '}${fontSize}px JetBrains Mono, monospace`;
               ctx.textAlign = 'center';
               ctx.textBaseline = 'top';
 
-              // Text background bubble for readability on white canvas
               const textWidth = ctx.measureText(label).width;
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-              ctx.fillRect(
-                node.x - textWidth / 2 - 4,
-                node.y + radius + 3,
-                textWidth + 8,
-                fontSize + 4
-              );
-              ctx.strokeStyle = 'rgba(15, 23, 42, 0.2)';
-              ctx.lineWidth = 0.8;
-              ctx.strokeRect(
-                node.x - textWidth / 2 - 4,
-                node.y + radius + 3,
-                textWidth + 8,
-                fontSize + 4
-              );
+              const boxPadding = 4;
+              const boxHeight = fontSize + 6;
 
-              ctx.fillStyle = isSelected ? '#1d4ed8' : isPathNode ? '#b91c1c' : '#0f172a';
-              ctx.fillText(label, node.x, node.y + radius + 5);
+              // Label background pill
+              ctx.fillStyle = isSelected
+                ? '#1e40af'
+                : isPathNode
+                ? '#991b1b'
+                : '#ffffff';
+
+              ctx.beginPath();
+              if (ctx.roundRect) {
+                ctx.roundRect(
+                  node.x - textWidth / 2 - boxPadding,
+                  node.y + radius + 4,
+                  textWidth + boxPadding * 2,
+                  boxHeight,
+                  4
+                );
+              } else {
+                ctx.rect(
+                  node.x - textWidth / 2 - boxPadding,
+                  node.y + radius + 4,
+                  textWidth + boxPadding * 2,
+                  boxHeight
+                );
+              }
+              ctx.fill();
+
+              ctx.strokeStyle = isSelected
+                ? '#3b82f6'
+                : isPathNode
+                ? '#ef4444'
+                : '#0f172a';
+              ctx.lineWidth = 1.2;
+              ctx.stroke();
+
+              // Label text color
+              ctx.fillStyle = (isSelected || isPathNode) ? '#ffffff' : '#0f172a';
+              ctx.fillText(label, node.x, node.y + radius + 6);
             }
 
             ctx.restore();
           }}
           nodePointerAreaPaint={(node, color, ctx) => {
-            const radius = (node.radius || 6) + 4;
+            const radius = (node.radius || 8) + 5;
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);

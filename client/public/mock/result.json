@@ -1,0 +1,291 @@
+{
+  "projectScore": 42,
+  "grade": "C",
+  "fix": {
+    "package": "axios",
+    "risk": 55,
+    "command": "npm install axios@latest"
+  },
+  "packages": [
+    {
+      "id": "axios@0.21.1",
+      "direct": true,
+      "vulns": [
+        {
+          "id": "GHSA-cph5-m8f7-6c5x",
+          "summary": "Server-Side Request Forgery in axios",
+          "severity": "critical"
+        },
+        {
+          "id": "GHSA-4w2v-q235-vp99",
+          "summary": "Axios Denial of Service vulnerability",
+          "severity": "high"
+        }
+      ],
+      "deprecated": false,
+      "lastPublish": "2021-01-08T19:24:00.000Z",
+      "license": "MIT",
+      "installScripts": false,
+      "dataUnavailable": false,
+      "riskyLicense": false,
+      "licenseNote": "Permissive license (MIT)",
+      "abandoned": false,
+      "abandonedReason": "",
+      "score": 78,
+      "scoreBreakdown": {
+        "vulns": 40,
+        "deprecated": 0,
+        "stale": 8,
+        "scripts": 0,
+        "license": 0
+      },
+      "blastRadius": 6
+    },
+    {
+      "id": "lodash@4.17.15",
+      "direct": false,
+      "vulns": [
+        {
+          "id": "GHSA-p6mc-m468-83gw",
+          "summary": "Prototype Pollution in lodash",
+          "severity": "high"
+        },
+        {
+          "id": "GHSA-35jh-r3h4-6jhm",
+          "summary": "Command Injection in lodash",
+          "severity": "high"
+        }
+      ],
+      "deprecated": false,
+      "lastPublish": "2019-07-19T02:00:00.000Z",
+      "license": "MIT",
+      "installScripts": false,
+      "dataUnavailable": false,
+      "riskyLicense": false,
+      "licenseNote": "Permissive license (MIT)",
+      "abandoned": true,
+      "abandonedReason": "Last publish was over 2 years ago",
+      "score": 62,
+      "scoreBreakdown": {
+        "vulns": 32,
+        "deprecated": 0,
+        "stale": 15,
+        "scripts": 0,
+        "license": 0
+      },
+      "blastRadius": 14
+    },
+    {
+      "id": "request@2.88.2",
+      "direct": true,
+      "vulns": [
+        {
+          "id": "GHSA-p8p7-x288-2832",
+          "summary": "Server-Side Request Forgery in request",
+          "severity": "medium"
+        }
+      ],
+      "deprecated": true,
+      "lastPublish": "2020-02-18T14:10:00.000Z",
+      "license": "Apache-2.0",
+      "installScripts": false,
+      "dataUnavailable": false,
+      "riskyLicense": false,
+      "licenseNote": "Permissive license (Apache-2.0)",
+      "abandoned": true,
+      "abandonedReason": "Package is marked deprecated and stale",
+      "score": 65,
+      "scoreBreakdown": {
+        "vulns": 15,
+        "deprecated": 20,
+        "stale": 15,
+        "scripts": 0,
+        "license": 0
+      },
+      "blastRadius": 8
+    },
+    {
+      "id": "node-sass@4.14.1",
+      "direct": true,
+      "vulns": [],
+      "deprecated": true,
+      "lastPublish": "2020-04-30T10:00:00.000Z",
+      "license": "MIT",
+      "installScripts": true,
+      "dataUnavailable": false,
+      "riskyLicense": false,
+      "licenseNote": "Permissive license (MIT)",
+      "abandoned": true,
+      "abandonedReason": "Node-sass is deprecated in favor of Dart Sass",
+      "score": 45,
+      "scoreBreakdown": {
+        "vulns": 0,
+        "deprecated": 20,
+        "stale": 15,
+        "scripts": 10,
+        "license": 0
+      },
+      "blastRadius": 2
+    },
+    {
+      "id": "minimist@1.2.5",
+      "direct": false,
+      "vulns": [
+        {
+          "id": "GHSA-vh95-rmgr-6w4m",
+          "summary": "Prototype Pollution in minimist",
+          "severity": "critical"
+        }
+      ],
+      "deprecated": false,
+      "lastPublish": "2020-03-12T11:20:00.000Z",
+      "license": "MIT",
+      "installScripts": false,
+      "dataUnavailable": false,
+      "riskyLicense": false,
+      "licenseNote": "Permissive license (MIT)",
+      "abandoned": true,
+      "abandonedReason": "Last publish over 2 years ago",
+      "score": 55,
+      "scoreBreakdown": {
+        "vulns": 40,
+        "deprecated": 0,
+        "stale": 15,
+        "scripts": 0,
+        "license": 0
+      },
+      "blastRadius": 11
+    },
+    {
+      "id": "gpl-helper@1.0.0",
+      "direct": false,
+      "vulns": [],
+      "deprecated": false,
+      "lastPublish": "2023-01-15T08:00:00.000Z",
+      "license": "GPL-3.0",
+      "installScripts": false,
+      "dataUnavailable": false,
+      "riskyLicense": true,
+      "licenseNote": "Copyleft / restrictive license (GPL-3.0)",
+      "abandoned": false,
+      "abandonedReason": "",
+      "score": 25,
+      "scoreBreakdown": {
+        "vulns": 0,
+        "deprecated": 0,
+        "stale": 5,
+        "scripts": 0,
+        "license": 15
+      },
+      "blastRadius": 1
+    },
+    {
+      "id": "express@4.19.2",
+      "direct": true,
+      "vulns": [],
+      "deprecated": false,
+      "lastPublish": "2024-03-25T16:00:00.000Z",
+      "license": "MIT",
+      "installScripts": false,
+      "dataUnavailable": false,
+      "riskyLicense": false,
+      "licenseNote": "Permissive license (MIT)",
+      "abandoned": false,
+      "abandonedReason": "",
+      "score": 5,
+      "scoreBreakdown": {
+        "vulns": 0,
+        "deprecated": 0,
+        "stale": 5,
+        "scripts": 0,
+        "license": 0
+      },
+      "blastRadius": 22
+    },
+    {
+      "id": "debug@4.3.4",
+      "direct": false,
+      "vulns": [],
+      "deprecated": false,
+      "lastPublish": "2022-04-26T18:30:00.000Z",
+      "license": "MIT",
+      "installScripts": false,
+      "dataUnavailable": false,
+      "riskyLicense": false,
+      "licenseNote": "Permissive license (MIT)",
+      "abandoned": false,
+      "abandonedReason": "",
+      "score": 8,
+      "scoreBreakdown": {
+        "vulns": 0,
+        "deprecated": 0,
+        "stale": 8,
+        "scripts": 0,
+        "license": 0
+      },
+      "blastRadius": 18
+    },
+    {
+      "id": "cookie@0.6.0",
+      "direct": false,
+      "vulns": [
+        {
+          "id": "GHSA-pxg6-pf52-xh8x",
+          "summary": "Cookie prefix vulnerability",
+          "severity": "low"
+        }
+      ],
+      "deprecated": false,
+      "lastPublish": "2023-10-10T12:00:00.000Z",
+      "license": "MIT",
+      "installScripts": false,
+      "dataUnavailable": false,
+      "riskyLicense": false,
+      "licenseNote": "Permissive license (MIT)",
+      "abandoned": false,
+      "abandonedReason": "",
+      "score": 9,
+      "scoreBreakdown": {
+        "vulns": 5,
+        "deprecated": 0,
+        "stale": 4,
+        "scripts": 0,
+        "license": 0
+      },
+      "blastRadius": 5
+    },
+    {
+      "id": "unknown-pkg@0.1.0",
+      "direct": false,
+      "vulns": [],
+      "deprecated": false,
+      "lastPublish": "2018-02-11T10:00:00.000Z",
+      "license": "UNKNOWN",
+      "installScripts": true,
+      "dataUnavailable": true,
+      "riskyLicense": true,
+      "licenseNote": "Missing or unknown license",
+      "abandoned": true,
+      "abandonedReason": "Last publish was over 2 years ago",
+      "score": 40,
+      "scoreBreakdown": {
+        "vulns": 0,
+        "deprecated": 0,
+        "stale": 15,
+        "scripts": 10,
+        "license": 15
+      },
+      "blastRadius": 1
+    }
+  ],
+  "graph": {
+    "nodes": [
+      { "id": "axios@0.21.1", "name": "axios", "version": "0.21.1", "direct": true },
+      { "id": "lodash@4.17.15", "name": "lodash", "version": "4.17.15", "direct": false },
+      { "id": "express@4.19.2", "name": "express", "version": "4.19.2", "direct": true }
+    ],
+    "edges": [
+      { "from": "axios@0.21.1", "to": "lodash@4.17.15" }
+    ]
+  }
+}

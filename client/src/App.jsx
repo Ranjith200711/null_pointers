@@ -173,7 +173,7 @@ export default function App() {
       <header className="page-header">
         <div>
           <h1 className="page-title">
-            <span className="title-highlight">null_pointers</span> Dependency Inspector
+            <span className="title-highlight">Dependency</span> Inspector
           </h1>
           <p className="page-subtitle">
             Parse lockfiles, enrich with OSV.dev and npm registry, score risk transparently, and find single-command upgrades.
@@ -259,7 +259,7 @@ export default function App() {
                 id="file-path-input"
                 type="text"
                 className="text-input"
-                placeholder="e.g. D:/null_pointers/samples/package-lock.json"
+                placeholder="e.g. samples/package-lock.json"
                 value={filePath}
                 onChange={(e) => {
                   setFilePath(e.target.value);

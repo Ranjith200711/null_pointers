@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "node test.js"
+    "test": "node test.js",
+    "test:enrich": "node enrich/test-enrich.js",
+    "test:flags-scoring": "node test-flags-scoring.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
